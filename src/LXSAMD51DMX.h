@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -----------------------------------------------------------------------------------
 
    The LXSAMD51DMX library supports output and input of DMX using
-   sercom4 of a MKR1000 microcontroller in UART mode. (pins 7 & 8)
+   sercom4 of a Seeed Wio Terminal. (pins D0 & D1)
    
    This is the circuit for a simple unisolated DMX Shield
    that could be used with LXSAMD51DMX.  It uses a line driver IC
@@ -526,6 +526,11 @@ extern LXSAMD51DMX SAMD51DMX;
 	#define PIN_DMX_RX (0ul)
 	#define PIN_DMX_TX (1ul)
 	#define PAD_DMX_RX SERCOM_RX_PAD_1
+	// #define PAD_DMX_TX (UART_TX_PAD_0) // (SercomUartTXPad)(0x3ul) for RS485?
+	// RS485 apparently works, sort of. Does not drive DMX... Unsure why,
+	// possibly because the RS485 mode does not seem to produce true differential signal.
+	// Also, direct RS485 does not allow for optical isolation.
+	// So using a MAX485 driver chip is preferred anyway.
 	#define PAD_DMX_TX UART_TX_PAD_0
 
 	// Set to PIO_SERCOM or PIO_SERCOM_ALT
