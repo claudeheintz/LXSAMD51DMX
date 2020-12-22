@@ -51,7 +51,7 @@ void DMX_SERCOM_HANDLER_FUNC()
 
 #if defined( use_optional_sercom_macros )
 	
-	#if ( use_optional_sercom_macros == 4 )
+	#if ( use_optional_sercom_macros == 1 )
 	void SERCOM2_0_Handler()
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
@@ -63,11 +63,15 @@ void DMX_SERCOM_HANDLER_FUNC()
 #endif
 
 #else
-	void SERCOM4_0_Handler()
+	void SERCOM4_0_Handler()		//TX Handler?  Needs all three for some reason?
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
 	void SERCOM4_1_Handler()
+	{
+	  DMX_SERCOM_HANDLER_FUNC();
+	}
+	void SERCOM4_2_Handler()		//RX Handler
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
@@ -398,7 +402,7 @@ void LXSAMD51DMX::outputIRQHandler(void) {
 }
 
 void LXSAMD51DMX::inputIRQHandler(void) {
-	
+
 		if ( DMX_SERCOM->USART.INTFLAG.bit.ERROR ) {
 		   DMX_SERCOM->USART.INTFLAG.bit.ERROR = 1;		//acknowledge error, clear interrupt
 		   

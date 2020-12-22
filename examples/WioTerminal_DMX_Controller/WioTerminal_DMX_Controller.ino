@@ -14,6 +14,9 @@
 #include <TFT_eSPI.h>
 #include <LXSAMD51DMX.h>
 
+#define DIRECTION_PIN 2
+#define DBG_PIN 3
+
 TFT_eSPI tft;
 
 uint8_t field_set_mode = 1;
@@ -24,7 +27,9 @@ char astr[4];
 char lstr[4];
 
 void setup() {
-  SAMD51DMX.setDirectionPin(3);  // Or, wire pins 2 & 3 of MAX485 to v+ for testing
+  pinMode(DBG_PIN, OUTPUT);
+  digitalWrite(DBG_PIN, HIGH);
+  SAMD51DMX.setDirectionPin(DIRECTION_PIN);  // Or, wire pins 2 & 3 of MAX485 to v+ for testing
   SAMD51DMX.startOutput();
 
   // UI Basic Layout

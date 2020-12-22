@@ -493,7 +493,7 @@ extern LXSAMD51DMX SAMD51DMX;
 
 #if ( use_optional_sercom_macros == 1 )
 
-//********************** optional sercom macros 4 ********************** 
+//********************** optional sercom macros 1 ********************** 
 	// --ATSAMD51 ?? for SEEED Wio Terminal
 	// requires comment out of SERCOM2_0_Handler() and void SERCOM2_1_Handler() in variants.cpp
 
