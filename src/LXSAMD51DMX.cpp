@@ -75,6 +75,10 @@ void DMX_SERCOM_HANDLER_FUNC()
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
+	void SERCOM4_3_Handler()		//RX Handler
+	{
+	  DMX_SERCOM_HANDLER_FUNC();
+	}
 #endif
 
 
@@ -105,6 +109,8 @@ LXSAMD51DMX::LXSAMD51DMX ( void ) {
 	_direction_pin = DIRECTION_PIN_NOT_USED;	//optional
 	_slots = DMX_MAX_SLOTS;
 	_interrupt_mode = ISR_DISABLED;
+	_receive_callback = NULL;
+	_rdm_receive_callback = NULL;
 	
 	//zero buffer including _dmxData[0] which is start code
     memset(_dmxData, 0, DMX_MAX_SLOTS+1);
@@ -245,6 +251,8 @@ void LXSAMD51DMX::transmissionComplete( void ) {
 				_dmx_read_state = DMX_READ_STATE_IDLE;
 			}
 			digitalWrite(_direction_pin, LOW);
+			DMX_SERCOM->USART.INTENSET.reg = SERCOM_USART_INTENSET_RXC |  //Received complete
+                                         SERCOM_USART_INTENSET_ERROR; //All others errors
 		} else {
 			_dmx_send_state = DMX_STATE_BREAK;
 			// txc interrupt not cleared so it will fire again...
@@ -322,7 +330,7 @@ void LXSAMD51DMX::packetComplete( void ) {
 					for(int j=0; j<plen; j++) {
 						_rdmData[j] = _receivedData[j];
 					}
-					if ( _receive_callback != NULL ) {
+					if ( _rdm_receive_callback != NULL ) {
 						_rdm_receive_callback(plen);
 					}
 				}
@@ -350,7 +358,7 @@ void LXSAMD51DMX::breakReceived( void ) {
 			}
 		}
 	}
-	_dmx_read_state = DMX_READ_STATE_START;		//break causes spurious 0 byte on next interrupt, ignore...
+	_dmx_read_state = DMX_READ_STATE_START;		        //break causes spurious 0 byte on next interrupt, ignore...
 	_next_read_slot = 0;
 	_packet_length = DMX_MAX_FRAME;						// default to receive complete frame
 }
@@ -392,13 +400,28 @@ void LXSAMD51DMX::setRDMReceivedCallback(LXRecvCallback callback) {
 	_rdm_receive_callback = callback;
 }
 
-
 void LXSAMD51DMX::outputIRQHandler(void) {
+	//clear frame error & ignore
+	if (DMX_sercom.isFrameErrorUART()) {
+		DMX_sercom.readDataUART();
+		DMX_sercom.clearFrameErrorUART();
+	}
+	// flush rx buffer ie. clear interrupt by reading
+	if ( DMX_SERCOM->USART.INTFLAG.bit.RXC ) {
+		uint8_t ignore = DMX_SERCOM->USART.DATA.reg;
+	}
+	// --- TX ---
     if ( DMX_SERCOM->USART.INTFLAG.bit.TXC ) {
     	transmissionComplete();
     } else if ( DMX_SERCOM->USART.INTFLAG.bit.DRE ) {
         dataRegisterEmpty();
     }
+    
+    // --- Ignore Other Errors ---
+    if (DMX_sercom.isUARTError()) {
+		DMX_sercom.acknowledgeUARTError();
+		DMX_sercom.clearStatusUART();
+	}
 }
 
 void LXSAMD51DMX::inputIRQHandler(void) {
@@ -408,6 +431,8 @@ void LXSAMD51DMX::inputIRQHandler(void) {
 		   
 			if ( DMX_SERCOM->USART.STATUS.bit.FERR ) {	//framing error happens when break is sent
 				breakReceived();
+				DMX_sercom.clearStatusUART();
+				DMX_SERCOM->USART.INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 				return;
 			}
 			// other error flags?
@@ -418,16 +443,18 @@ void LXSAMD51DMX::inputIRQHandler(void) {
 			uint8_t incoming_byte = DMX_SERCOM->USART.DATA.reg;				// read buffer to clear interrupt flag
 			byteReceived(incoming_byte);
 		} // RXC
+		
+		// --- Ignore Other Errors ---
+    if (DMX_sercom.isUARTError()) {
+		DMX_sercom.acknowledgeUARTError();
+		DMX_sercom.clearStatusUART();
+	}
 	
 }		  // <-inputIRQHandler(void)
 
 void LXSAMD51DMX::rdmIRQHandler(void) {
 	if ( _rdm_task_mode ) {
-		if ( DMX_SERCOM->USART.INTFLAG.bit.TXC ) {
-			transmissionComplete();
-		} else if ( DMX_SERCOM->USART.INTFLAG.bit.DRE ) {
-			dataRegisterEmpty();
-		}
+		outputIRQHandler();
 	} else {
 		inputIRQHandler();
 	}
@@ -568,6 +595,7 @@ uint8_t LXSAMD51DMX::sendRDMDiscoveryPacket(UID lower, UID upper, UID* single) {
 		resetFrame();
 	} else {
 		_rdm_read_handled = 0;
+		resetFrame();	// new 12-22-20
 	}
 
 	restoreTaskSendDMX();
@@ -582,11 +610,12 @@ uint8_t LXSAMD51DMX::sendRDMDiscoveryMute(UID target, uint8_t cmd) {
 	setupRDMControllerPacket(_rdmPacket, RDM_PKT_BASE_MSG_LEN, RDM_PORT_ONE, RDM_ROOT_DEVICE);
 	UID::copyFromUID(target, _rdmPacket, 3);
 	setupRDMMessageDataBlock(_rdmPacket, RDM_DISCOVERY_COMMAND, cmd, 0x00);
-
+	
 	_rdm_read_handled = 1;
 	sendRawRDMPacket(RDM_PKT_BASE_TOTAL_LEN);
+
 	delay(3);
-	
+
 	if ( _next_read_slot >= (RDM_PKT_BASE_TOTAL_LEN+2) ) {				//expected pdl 2 or 8
 		if ( validateRDMPacket(_receivedData) ) {
 			if ( _receivedData[RDM_IDX_RESPONSE_TYPE] == RDM_RESPONSE_TYPE_ACK ) {

@@ -34,7 +34,7 @@ UID upper(0,0,0,0,0,0);
 UID mid(0,0,0,0,0,0);
 UID found(0,0,0,0,0,0);
 
-#define DIRECTION_PIN 3
+#define DIRECTION_PIN 2
 #define DISC_STATE_SEARCH 0
 #define DISC_STATE_TBL_CK 1
 uint8_t discovery_state = DISC_STATE_TBL_CK;
@@ -44,10 +44,10 @@ uint8_t discovery_tbl_ck_index = 0;
 //***************** discovery functions
 
 void checkDeviceFound(UID found) {
-  Serial.print("checkDeviceFound ");
+  Serial.print("Check device: ");
   Serial.println(found);
   if ( testMute(found) ) {
-    Serial.print("!!!!!!!!!!!!!!!!!!!! found one");
+    Serial.println("found one!");
     tableOfDevices.add(found);
     tableChangedFlag = 1;
   }
@@ -55,13 +55,13 @@ void checkDeviceFound(UID found) {
 
 uint8_t testMute(UID u) {
    // try three times to get response when sending a mute message
-   if ( SAMDMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
+   if ( SAMD51DMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
      return 1;
    }
-   if ( SAMDMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
+   if ( SAMD51DMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
      return 1;
    }
-   if ( SAMDMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
+   if ( SAMD51DMX.sendRDMDiscoveryMute(u, RDM_DISC_MUTE) ) {
      return 1;
    }
    return 0;
@@ -69,7 +69,7 @@ uint8_t testMute(UID u) {
 
 uint8_t checkTable(uint8_t ck_index) {
   if ( ck_index == 0 ) {
-    SAMDMX.sendRDMDiscoveryMute(BROADCAST_ALL_DEVICES_ID, RDM_DISC_UNMUTE);
+    SAMD51DMX.sendRDMDiscoveryMute(BROADCAST_ALL_DEVICES_ID, RDM_DISC_UNMUTE);
   }
 
   if ( tableOfDevices.getUIDAt(ck_index, &found) )  {
@@ -97,20 +97,20 @@ void identifyEach() {
     } else {
       //uint16_t data;  //for DMX address and identify device on/off
       uint8_t data[2];
-      if ( SAMDMX.sendRDMGetCommand(found, RDM_DEVICE_START_ADDR, data, 2) ) {
+      if ( SAMD51DMX.sendRDMGetCommand(found, RDM_DEVICE_START_ADDR, data, 2) ) {
         uint16_t addr = (data[0] << 8) | data[1];
 
         if ( addr == 0x0F ) {
           data[0] = 0x00;
           data[1] = 0x01;
-          SAMDMX.sendRDMSetCommand(found, RDM_DEVICE_START_ADDR, (uint8_t*)data, 2);
+          SAMD51DMX.sendRDMSetCommand(found, RDM_DEVICE_START_ADDR, (uint8_t*)data, 2);
         }
   
         data[0] = 0x01;
-        SAMDMX.sendRDMSetCommand(found, RDM_IDENTIFY_DEVICE, (uint8_t*)data, 1);
+        SAMD51DMX.sendRDMSetCommand(found, RDM_IDENTIFY_DEVICE, (uint8_t*)data, 1);
         delay(2000);
         data[0] = 0x00;
-        SAMDMX.sendRDMSetCommand(found, RDM_IDENTIFY_DEVICE, (uint8_t*)data, 1);
+        SAMD51DMX.sendRDMSetCommand(found, RDM_IDENTIFY_DEVICE, (uint8_t*)data, 1);
       }
     }
   }
@@ -149,12 +149,12 @@ uint8_t checkNextRange() {
       if ( lower == upper ) {
         checkDeviceFound(lower);
       } else {        //not leaf so, check range lower->upper
-        uint8_t result = SAMDMX.sendRDMDiscoveryPacket(lower, upper, &found);
+        uint8_t result = SAMD51DMX.sendRDMDiscoveryPacket(lower, upper, &found);
         if ( result ) {
           //this range responded, so divide into sub ranges push them on stack to be further checked
           pushActiveBranch(lower, upper);
            
-        } else if ( SAMDMX.sendRDMDiscoveryPacket(lower, upper, &found) ) {
+        } else if ( SAMD51DMX.sendRDMDiscoveryPacket(lower, upper, &found) ) {
             pushActiveBranch(lower, upper); //if discovery fails, try a second time
         }
       }         // end check range
@@ -207,9 +207,13 @@ void setup() {
   while( ! Serial ) {}
   Serial.print("setup... ");
 
-  pinMode(6, OUTPUT);
+  // debug pins
+  //pinMode(6, OUTPUT);
+  //digitalWrite(6, LOW);
+  //pinMode(8, OUTPUT);
+  //digitalWrite(8, LOW);
   
-  SAMDMX.startRDM(DIRECTION_PIN, RDM_DIRECTION_OUTPUT);
+  SAMD51DMX.startRDM(DIRECTION_PIN, RDM_DIRECTION_OUTPUT);
   Serial.println("setup complete");
 }
 
@@ -226,8 +230,8 @@ void loop() {
   delay(2);
   testRDMDiscovery();
   
-  SAMDMX.setSlot(152,testLevel);
-  SAMDMX.setSlot(157,255);
+  SAMD51DMX.setSlot(101,testLevel);
+  SAMD51DMX.setSlot(103,255);
   loopDivider++;
   if ( loopDivider == 4 ) {
     testLevel++;

@@ -413,7 +413,7 @@ class LXSAMD51DMX  {
 	/*!
 	 * @brief slot index indicating position of last byte received
 	 */
-  	uint16_t  _next_read_slot;
+  	volatile uint16_t  _next_read_slot;
   	
 	/*!
 	 * @brief number of dmx slots ~24 to 512
