@@ -10,3 +10,7 @@ DMX Driver for AVR SAMD51 microcontrollers (Seeed Wio Terminal)
    Use getSlot() to read the level value for a particular DMX dimmer/address/channel.
    
    LXSAMD51DMX is used with a single instance called SAMD51DMX	
+   
+   This is the DMX circuit for using LXSAMD51DMX with Seeed Wio Terminal:
+   
+![image](extras/WioTerminalDMXCircuit.jpg)
