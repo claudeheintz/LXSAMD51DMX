@@ -41,15 +41,113 @@ uint8_t discovery_state = DISC_STATE_TBL_CK;
 uint8_t discovery_tbl_ck_index = 0;
 
 
-//***************** discovery functions
+
+/************************************************************************
+	setup
+*************************************************************************/
+void setup() {
+  Serial.begin(115200);
+  while( ! Serial ) {}
+  Serial.print("setup... ");
+
+  // debug pins
+  //pinMode(6, OUTPUT);
+  //digitalWrite(6, LOW);
+  //pinMode(8, OUTPUT);
+  //digitalWrite(8, LOW);
+  
+  SAMD51DMX.startRDM(DIRECTION_PIN, RDM_DIRECTION_OUTPUT);
+  Serial.println("setup complete");
+}
+
+
+/************************************************************************
+
+  The main loop executes the next step of the RDM discovery process
+  by calling testRDMDiscovery().
+
+  Discovered devices have their IDs printed to the Serial output.
+  They also have their identify function triggered (generally flashing themselves).
+  
+  It also increments an output level every 4 times through the loop.
+  
+     (This example shows a constant intensity address for an LED fixture at full
+      and a changing level for one of the colors)
+  
+*************************************************************************/
+
+void loop() {
+  delay(2);
+  testRDMDiscovery();
+  
+  SAMD51DMX.setSlot(101,testLevel);
+  SAMD51DMX.setSlot(103,255);
+  loopDivider++;
+  if ( loopDivider == 4 ) {
+    testLevel++;
+    loopDivider = 0;
+  }
+  if ( testLevel == 1 ) {
+    delay(500);
+    identifyFlag = 1;
+  }
+}
+
+/*************************************************** 
+ *     RDM discovery functions
+ *     
+ *     Sends RDM discovery packets/messages and builds a table of devices.
+ *     
+ *     RDM discovery packets ask the DMX chain for responses to a range of UIDs
+ *     The range is divided each time a response is received.
+ *     Repeated discovery/divide cycles close in on individual device UIDs
+ *     
+ *     When an UID is isolated, it is muted so it does not respond to additional discovery packets.
+ *     When a device accepts a mute message, it's existence on the chain is confirmed
+ *     and it's UID is added to the table of devices
+ *     
+ ***************************************************/
+
+void testRDMDiscovery() {
+  if ( discovery_state ) {
+    // check the table of devices
+    discovery_tbl_ck_index = checkTable(discovery_tbl_ck_index);
+    if ( discovery_tbl_ck_index == 0 ) {
+      // done with table check
+      discovery_state = DISC_STATE_SEARCH;
+      pushInitialBranch();
+
+      if ( identifyFlag ) {   //once per cycle identify each device
+        identifyEach();       //this is just to demonstrate GET device address
+        identifyFlag = 0;     //and SET identify device
+      }
+      
+      if ( tableChangedFlag ) {   //if the table has changed...
+        tableChangedFlag = 0;
+
+        // if this were an Art-Net application, you would send an 
+        // ArtTOD packet here, because the device table has changed.
+        // for this test, we just print the list of devices
+         Serial.println("_______________ Table Of Devices _______________");
+         tableOfDevices.printTOD();
+      }
+    }
+  } else {    // search for devices in range popped from discoveryTree
+    if ( checkNextRange() == 0 ) {
+      // done with search
+      discovery_tbl_ck_index = 0;
+      discovery_state = DISC_STATE_TBL_CK;
+    }
+  }
+}
 
 void checkDeviceFound(UID found) {
   Serial.print("Check device: ");
   Serial.println(found);
-  if ( testMute(found) ) {
-    Serial.println("found one!");
-    tableOfDevices.add(found);
-    tableChangedFlag = 1;
+  if ( testMute(found) ) {        // If the device UID replies, it is muted, so
+    Serial.println("found one!"); // it won't respond to other discovery messages.
+    tableOfDevices.add(found);    // This confirms the device on the DMX chain:
+    tableChangedFlag = 1;         // Add it to the table of devices.
   }
 }
 
@@ -87,7 +185,7 @@ uint8_t checkTable(uint8_t ck_index) {
   return 0;
 }
 
-void identifyEach() {
+void identifyEach() { // Send an identify command to each device in the table
   int i = 0;
   uint8_t notDone = 1;
   while ( notDone ) {
@@ -130,7 +228,7 @@ void pushActiveBranch(UID lower, UID upper) {
   }
 }
 
-void pushInitialBranch() {
+void pushInitialBranch() {  // initial range of devices for identify
   lower.setBytes(0);
   upper.setBytes(BROADCAST_ALL_DEVICES_ID);
   discoveryTree.push(lower);
@@ -143,8 +241,8 @@ void pushInitialBranch() {
   discoveryTree.push(upper);
 }
 
-uint8_t checkNextRange() {
-  if ( discoveryTree.pop(&upper) ) {
+uint8_t checkNextRange() {    
+  if ( discoveryTree.pop(&upper) ) {    // pop UIDs off the list to be checked
     if ( discoveryTree.pop(&lower) ) {
       if ( lower == upper ) {
         checkDeviceFound(lower);
@@ -162,83 +260,4 @@ uint8_t checkNextRange() {
     }           // end valid pop
   }             // end valid pop  
   return 0;     // none left to pop
-}
-
-
-
-void testRDMDiscovery() {
-  if ( discovery_state ) {
-    // check the table of devices
-    discovery_tbl_ck_index = checkTable(discovery_tbl_ck_index);
-    if ( discovery_tbl_ck_index == 0 ) {
-      // done with table check
-      discovery_state = DISC_STATE_SEARCH;
-      pushInitialBranch();
-
-      if ( identifyFlag ) {   //once per cycle identify each device
-        identifyEach();       //this is just to demonstrate GET device address
-        identifyFlag = 0;     //and SET identify device
-      }
-      
-      if ( tableChangedFlag ) {   //if the table has changed...
-        tableChangedFlag = 0;
-
-        // if this were an Art-Net application, you would send an 
-        // ArtTOD packet here, because the device table has changed.
-        // for this test, we just print the list of devices
-         Serial.println("_______________ Table Of Devices _______________");
-         tableOfDevices.printTOD();
-      }
-    }
-  } else {    // search for devices in range popped from discoveryTree
-    if ( checkNextRange() == 0 ) {
-      // done with search
-      discovery_tbl_ck_index = 0;
-      discovery_state = DISC_STATE_TBL_CK;
-    }
-  }
-}
-
-/************************************************************************
-	setup
-*************************************************************************/
-void setup() {
-  Serial.begin(115200);
-  while( ! Serial ) {}
-  Serial.print("setup... ");
-
-  // debug pins
-  //pinMode(6, OUTPUT);
-  //digitalWrite(6, LOW);
-  //pinMode(8, OUTPUT);
-  //digitalWrite(8, LOW);
-  
-  SAMD51DMX.startRDM(DIRECTION_PIN, RDM_DIRECTION_OUTPUT);
-  Serial.println("setup complete");
-}
-
-
-/************************************************************************
-
-  The main loop checks to see if the level of the designated slot has changed
-  and prints the new level to the serial monitor.  If a PWM channel is assigned,
-  it also sets the output level.
-  
-*************************************************************************/
-
-void loop() {
-  delay(2);
-  testRDMDiscovery();
-  
-  SAMD51DMX.setSlot(101,testLevel);
-  SAMD51DMX.setSlot(103,255);
-  loopDivider++;
-  if ( loopDivider == 4 ) {
-    testLevel++;
-    loopDivider = 0;
-  }
-  if ( testLevel == 1 ) {
-    delay(500);
-    identifyFlag = 1;
-  }
 }
