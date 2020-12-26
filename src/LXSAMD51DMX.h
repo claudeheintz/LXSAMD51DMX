@@ -325,7 +325,7 @@ class LXSAMD51DMX  {
 	*             so restores sending, waiting for a frame to be sent before returning.
     * @return 1 if discovered, 2 if valid packet (UID stored in uldata[12-17])
     */
-    uint8_t sendRDMDiscoveryPacket(UID lower, UID upper, UID* single);
+    uint8_t sendRDMDiscoveryPacket(UID* lower, UID* upper, UID* single);
     
     /*!
     * @brief send discovery mute/un-mute packet to target UID
@@ -333,7 +333,7 @@ class LXSAMD51DMX  {
 	*             so restores sending, waiting for a frame to be sent before returning.
     * @return 1 if ack response is received.
     */
-    uint8_t sendRDMDiscoveryMute(UID target, uint8_t cmd);
+    uint8_t sendRDMDiscoveryMute(UID* target, uint8_t cmd);
     
     /*!
     * @brief send previously built packet in _rdmPacket and validate response
@@ -355,7 +355,7 @@ class LXSAMD51DMX  {
 	*             so restores sending, waiting for a frame to be sent before returning.
     * @return 1 if ack is received.
     */
-    uint8_t sendRDMGetCommand(UID target, uint16_t pid, uint8_t* info, uint8_t len);
+    uint8_t sendRDMGetCommand(UID* target, uint16_t pid, uint8_t* info, uint8_t len);
     
     /*!
     * @brief send RDM_SET_COMMAND packet
@@ -363,7 +363,7 @@ class LXSAMD51DMX  {
 	*             so restores sending, waiting for a frame to be sent before returning.
     * @return 1 if ack is received.
     */
-    uint8_t sendRDMSetCommand(UID target, uint16_t pid, uint8_t* info, uint8_t len);
+    uint8_t sendRDMSetCommand(UID* target, uint16_t pid, uint8_t* info, uint8_t len);
     
     static UID THIS_DEVICE_ID;
 

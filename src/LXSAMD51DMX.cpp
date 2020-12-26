@@ -540,7 +540,7 @@ void  LXSAMD51DMX::setupRDMMessageDataBlock(uint8_t* pdata, uint8_t cmdclass, ui
   	// total always 4 bytes
 }
 
-uint8_t LXSAMD51DMX::sendRDMDiscoveryPacket(UID lower, UID upper, UID* single) {
+uint8_t LXSAMD51DMX::sendRDMDiscoveryPacket(UID* lower, UID* upper, UID* single) {
 	uint8_t rv = RDM_NO_DISCOVERY;
 	uint8_t j;
 	
@@ -548,8 +548,8 @@ uint8_t LXSAMD51DMX::sendRDMDiscoveryPacket(UID lower, UID upper, UID* single) {
 	setupRDMControllerPacket(_rdmPacket, RDM_DISC_UNIQUE_BRANCH_MSGL, RDM_PORT_ONE, RDM_ROOT_DEVICE);
 	UID::copyFromUID(BROADCAST_ALL_DEVICES_ID, _rdmPacket, 3);
 	setupRDMMessageDataBlock(_rdmPacket, RDM_DISCOVERY_COMMAND, RDM_DISC_UNIQUE_BRANCH, RDM_DISC_UNIQUE_BRANCH_PDL);
-  	UID::copyFromUID(lower, _rdmPacket, 24);
-  	UID::copyFromUID(upper, _rdmPacket, 30);
+  	UID::copyFromUID(*lower, _rdmPacket, 24);
+  	UID::copyFromUID(*upper, _rdmPacket, 30);
 	
 	_rdm_read_handled = 1;
 	sendRawRDMPacket(RDM_DISC_UNIQUE_BRANCH_PKTL);
@@ -602,13 +602,13 @@ uint8_t LXSAMD51DMX::sendRDMDiscoveryPacket(UID lower, UID upper, UID* single) {
 	return rv;
 }
 
-uint8_t LXSAMD51DMX::sendRDMDiscoveryMute(UID target, uint8_t cmd) {
+uint8_t LXSAMD51DMX::sendRDMDiscoveryMute(UID* target, uint8_t cmd) {
 	uint8_t rv = 0;
 
 	//Build RDM packet
 	// total packet length 0 parameter is 24 (+cksum =26 for sendRawRDMPacket) 
 	setupRDMControllerPacket(_rdmPacket, RDM_PKT_BASE_MSG_LEN, RDM_PORT_ONE, RDM_ROOT_DEVICE);
-	UID::copyFromUID(target, _rdmPacket, 3);
+	UID::copyFromUID(*target, _rdmPacket, 3);
 	setupRDMMessageDataBlock(_rdmPacket, RDM_DISCOVERY_COMMAND, cmd, 0x00);
 	
 	_rdm_read_handled = 1;
@@ -667,13 +667,13 @@ uint8_t LXSAMD51DMX::sendRDMControllerPacket( uint8_t* bytes, uint8_t len ) {
 	return sendRDMControllerPacket();
 }
 
-uint8_t LXSAMD51DMX::sendRDMGetCommand(UID target, uint16_t pid, uint8_t* info, uint8_t len) {
+uint8_t LXSAMD51DMX::sendRDMGetCommand(UID* target, uint16_t pid, uint8_t* info, uint8_t len) {
 	uint8_t rv = 0;
 	
 	//Build RDM packet
 	// total packet length 0 parameter is 24 (+cksum =26 for sendRawRDMPacket) 
 	setupRDMControllerPacket(_rdmPacket, RDM_PKT_BASE_MSG_LEN, RDM_PORT_ONE, RDM_ROOT_DEVICE);
-	UID::copyFromUID(target, _rdmPacket, 3);
+	UID::copyFromUID(*target, _rdmPacket, 3);
 	setupRDMMessageDataBlock(_rdmPacket, RDM_GET_COMMAND, pid, 0x00);
 	
 	if ( sendRDMControllerPacket() ) {
@@ -692,13 +692,13 @@ uint8_t LXSAMD51DMX::sendRDMGetCommand(UID target, uint16_t pid, uint8_t* info, 
 	return rv;
 }
 
-uint8_t LXSAMD51DMX::sendRDMSetCommand(UID target, uint16_t pid, uint8_t* info, uint8_t len) {
+uint8_t LXSAMD51DMX::sendRDMSetCommand(UID* target, uint16_t pid, uint8_t* info, uint8_t len) {
 	uint8_t rv = 0;
 	
 	//Build RDM packet
 	// total packet length 1 byte parameter is 25 (+cksum =27 for sendRawRDMPacket) 
 	setupRDMControllerPacket(_rdmPacket, RDM_PKT_BASE_MSG_LEN+len, RDM_PORT_ONE, RDM_ROOT_DEVICE);
-	UID::copyFromUID(target, _rdmPacket, 3);
+	UID::copyFromUID(*target, _rdmPacket, 3);
 	setupRDMMessageDataBlock(_rdmPacket, RDM_SET_COMMAND, pid, len);
 	for(int j=0; j<len; j++) {
 		_rdmPacket[24+j] = info[j];
