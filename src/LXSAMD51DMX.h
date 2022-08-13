@@ -396,6 +396,11 @@ class LXSAMD51DMX  {
   	uint8_t  _rdm_read_handled;
   	
   	/*!
+	 * @brief flag indicating DRE interrupt for sending raw RDM
+	 */
+  	uint8_t  _raw_rdm_dre;
+  	
+  	/*!
 	 * @brief transaction number
 	 */
   	uint8_t _transaction;
