@@ -114,7 +114,6 @@ LXSAMD51DMX::LXSAMD51DMX ( void ) {
 	
 	//zero buffer including _dmxData[0] which is start code
     memset(_dmxData, 0, DMX_MAX_SLOTS+1);
-    //_dre_flag = 0;
 }
     
 
@@ -180,7 +179,6 @@ void LXSAMD51DMX::startRDM( uint8_t pin, uint8_t direction ) {
 		_next_read_slot = 0;              
 		_dmx_read_state = DMX_STATE_IDLE;
 		_rdm_task_mode = DMX_TASK_SEND;
-		_raw_rdm_dre = 0;
 	} else {
 		startInput();
 		DMX_SERCOM->USART.INTENSET.reg =  SERCOM_USART_INTENSET_TXC | SERCOM_USART_INTENSET_ERROR;
@@ -455,13 +453,7 @@ void LXSAMD51DMX::inputIRQHandler(void) {
 
 void LXSAMD51DMX::rdmIRQHandler(void) {
 	if ( _rdm_task_mode ) {
-		if ( _raw_rdm_dre ) {
-			_raw_rdm_dre = 0;
-			DMX_SERCOM->USART.INTENSET.reg =  SERCOM_USART_INTENSET_TXC | SERCOM_USART_INTENSET_ERROR;
-			transmissionComplete();
-		} else {
-			outputIRQHandler();
-		}
+		outputIRQHandler();
 	} else {
 		inputIRQHandler();
 	}
@@ -514,10 +506,10 @@ void LXSAMD51DMX::sendRawRDMPacket( uint8_t len ) {		// only valid if connection
 		_rdm_task_mode = DMX_TASK_SEND_RDM;
 		digitalWrite(_direction_pin, HIGH);
 		_dmx_send_state = DMX_STATE_BREAK;
-		_raw_rdm_dre = 1;
 		//set the interrupts
-		//DMX_SERCOM->USART.INTENSET.reg =  SERCOM_USART_INTENSET_TXC | SERCOM_USART_INTENSET_ERROR;
-		DMX_SERCOM->USART.INTENSET.reg = SERCOM_USART_INTENSET_DRE;
+		DMX_SERCOM->USART.INTENSET.reg =  SERCOM_USART_INTENSET_TXC | SERCOM_USART_INTENSET_ERROR;
+		//call transmissionComplete() to send break...
+		transmissionComplete();
 	}
 	
 	while ( _rdm_task_mode ) {	//wait for packet to be sent and listening to start
