@@ -50,8 +50,8 @@ void loop() {
   if ( got_dmx ) {
     analogWrite(PWM_PIN,SAMD51DMX.getSlot(1));
     Serial.println("---");
-    Serial.println(SAMDMX.getSlot(1));
-    Serial.println(SAMDMX.getSlot(2));
+    Serial.println(SAMD51DMX.getSlot(1));
+    Serial.println(SAMD51DMX.getSlot(2));
     got_dmx = 0;
     Serial.println(got_dmx);
     Serial.println("___");
