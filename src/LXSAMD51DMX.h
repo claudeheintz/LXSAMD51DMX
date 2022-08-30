@@ -543,6 +543,35 @@ extern LXSAMD51DMX SAMD51DMX;
 	#define DMX_SERCOM_HANDLER_FUNC LX_SERCOM_Handler
 		
 	#warning Using use_optional_sercom_macros = 1, SERCOM2 handlers in Wio Terminal variants.cpp conflict
+	
+	/*
+	  modify the end of ~/Arduino15/packages/Seeeduino/hardware/samd/1.8.3/variants/wio_terminal/variant.cpp
+	  as follows to allow compiling with  use_optional_sercom_macros == 1 to avoid conflict with Serial1
+	  If you use the wioterminal TX/RX pins for DMX, you can't use Serial1 elsewhere.
+	
+	#else
+	void SERCOM2_0_Handler() __attribute__((weak));
+	void SERCOM2_0_Handler()
+	{
+	  Serial1.IrqHandler();
+	}
+	void SERCOM2_1_Handler() __attribute__((weak));
+	void SERCOM2_1_Handler()
+	{
+	  Serial1.IrqHandler();
+	}
+	void SERCOM2_2_Handler() __attribute__((weak));
+	void SERCOM2_2_Handler()
+	{
+	  Serial1.IrqHandler();
+	}
+	void SERCOM2_3_Handler() __attribute__((weak));
+	void SERCOM2_3_Handler()
+	{
+	  Serial1.IrqHandler();
+	}
+	#endif
+	*/
 
 #endif
 	
