@@ -15,6 +15,7 @@
 */
 /**************************************************************************/
 
+//NOTE for optional TX RX Pins, uncomment see SAMD51DMX.h line 490
 #include <LXSAMD51DMX.h>
 #include "LXRDMDiscovery.h"
 

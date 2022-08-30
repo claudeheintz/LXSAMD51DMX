@@ -11,6 +11,8 @@
     v1.00 - First release
 */
 /**************************************************************************/
+
+//NOTE for optional TX RX Pins, uncomment see SAMD51DMX.h line 490
 #include <LXSAMD51DMX.h>
 
 

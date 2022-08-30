@@ -11,18 +11,25 @@
     v1.00 - First release
 */
 /**************************************************************************/
+
+//NOTE for optional TX RX Pins, uncomment see SAMD51DMX.h line 490
 #include <LXSAMD51DMX.h>
 
 #define PWM_PIN 2
+#define DIRECTION_PIN 7
 int got_dmx = 0;
 
 void setup() {
+  pinMode(DIRECTION_PIN, OUTPUT);
   pinMode(PWM_PIN, OUTPUT);
 
+  SAMD51DMX.setDirectionPin(DIRECTION_PIN);
   SAMD51DMX.setDataReceivedCallback(&gotDMXCallback);
   SAMD51DMX.startInput();
   
   Serial.begin(115200);
+  while ( ! Serial ) {}					//serial monitor must be opened for loop to run!
+  Serial.println("setup complete");
 }
 
 

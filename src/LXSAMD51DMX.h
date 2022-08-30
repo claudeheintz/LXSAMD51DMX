@@ -514,8 +514,7 @@ extern LXSAMD51DMX SAMD51DMX;
  *
  *****************************************************************/
  
-
-//#define use_optional_sercom_macros 1
+#define use_optional_sercom_macros 1
 
 #if defined( use_optional_sercom_macros )
 
@@ -541,8 +540,8 @@ extern LXSAMD51DMX SAMD51DMX;
 	#define DMX_sercom sercom2
 
 	// sercom handler function
-	#define DMX_SERCOM_HANDLER_FUNC SERCOM2_0_Handler
-	
+	#define DMX_SERCOM_HANDLER_FUNC LX_SERCOM_Handler
+		
 	#warning Using use_optional_sercom_macros = 1, SERCOM2 handlers in Wio Terminal variants.cpp conflict
 
 #endif
@@ -572,7 +571,9 @@ extern LXSAMD51DMX SAMD51DMX;
 	#define DMX_sercom sercom4
 
 	// sercom handler function
-	#define DMX_SERCOM_HANDLER_FUNC SERCOM4_Handler
+	#define DMX_SERCOM_HANDLER_FUNC LX_SERCOM_Handler
+	
+	#warning Using use_optional_sercom_macros undefined default
 
 #endif
 

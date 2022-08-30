@@ -50,9 +50,11 @@ void DMX_SERCOM_HANDLER_FUNC()
 }
 
 #if defined( use_optional_sercom_macros )
+	#warning use_optional_sercom_macros
 	
 	#if ( use_optional_sercom_macros == 1 )
-	void SERCOM2_0_Handler()
+	#warning use_optional_sercom_macros == 1
+	void SERCOM2_0_Handler()	//TX
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
@@ -60,10 +62,20 @@ void DMX_SERCOM_HANDLER_FUNC()
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
-#endif
+	void SERCOM2_2_Handler()
+	{
+	  DMX_SERCOM_HANDLER_FUNC();
+	}
+	void SERCOM2_3_Handler()
+	{
+	  DMX_SERCOM_HANDLER_FUNC();
+	}
+	#endif
 
 #else
-	void SERCOM4_0_Handler()		//TX Handler?  Needs all three for some reason?
+	#warning use_optional_sercom_macros undefined
+	void SERCOM4_0_Handler()		//TX Handler 
+	
 	{
 	  DMX_SERCOM_HANDLER_FUNC();
 	}
