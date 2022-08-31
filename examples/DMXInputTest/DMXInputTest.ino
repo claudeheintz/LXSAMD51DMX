@@ -9,6 +9,24 @@
     @section  HISTORY
 
     v1.00 - First release
+    
+    
+    This is the circuit for a simple unisolated DMX Shield for input:
+
+ Arduino                    SN 75176 A or MAX 481CPA
+ pin       3k        1k      _______________
+ |   GND---/\/\/\-+-/\/\/\--| 1      Vcc 8 |------ +5v
+ V                |         |              |                 DMX Output
+  RX >------------+    +----| 2        B 7 |---------------- Pin 2
+                       |    |              |
+  D7 or GND >----------+----| 3 DE     A 6 |---------------- Pin 3
+                            |              |
+  TX >----------------------| 4 DI   Gnd 5 |---+------------ Pin 1
+                             _______________   |
+                330 ohm                       GND
+  D2 |-----------/\/\/\-----[ LED ]------------|
+
+
 */
 /**************************************************************************/
 
@@ -23,7 +41,7 @@ void setup() {
   pinMode(DIRECTION_PIN, OUTPUT);
   pinMode(PWM_PIN, OUTPUT);
 
-  SAMD51DMX.setDirectionPin(DIRECTION_PIN);
+  SAMD51DMX.setDirectionPin(DIRECTION_PIN);  // Or, wire pins 2 & 3 of MAX485 to GND for testing
   SAMD51DMX.setDataReceivedCallback(&gotDMXCallback);
   SAMD51DMX.startInput();
   
